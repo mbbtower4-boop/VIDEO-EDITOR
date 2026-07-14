@@ -257,6 +257,10 @@ check('parseTasksResponse strips fences, drops empty titles, coerces priority',
 check('parseTasksResponse bare array accepted', ops.parseTasksResponse('[{"title":"x"}]').tasks.length === 1);
 check('parseTasksResponse garbage throws', throws(() => ops.parseTasksResponse('sorry, no tasks here')));
 
+const llargs = ops.buildLlamaArgs('D:\\m\\q.gguf', 'D:\\t\\p.txt');
+check('buildLlamaArgs prompt via file + single turn + GPU offload',
+  llargs.join(' ').includes('-f D:\\t\\p.txt') && llargs.includes('-st') && llargs.includes('-ngl'));
+
 check('xmlEscape', ops.xmlEscape('a<b>&"c"') === 'a&lt;b&gt;&amp;&quot;c&quot;');
 check('crc32 known value', ops.crc32(new TextEncoder().encode('123456789')) === 0xCBF43926);
 

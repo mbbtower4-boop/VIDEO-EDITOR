@@ -39,7 +39,7 @@ for (const id of ['version', 'btnOpen', 'btnAnalyze', 'btnExport', 'btnSettings'
   'statsReadout', 'tlCanvas', 'selMode', 'inNoiseDb', 'noiseDbVal', 'inPadLead', 'inPadTail',
   'inMinCut', 'inFreezeNoise', 'inFreezeDur', 'btnReanalyze', 'btnTranscribe', 'langTabs',
   'selProvider', 'btnTranslate', 'cueList', 'btnSaveSrt', 'btnSaveAll', 'btnMux', 'btnBurn', 'btnTasks',
-  'settingsModal', 'setProvider', 'setClaudeKey', 'setClaudeModel', 'setMyMemoryEmail',
+  'settingsModal', 'setProvider', 'setTasksEngine', 'setClaudeKey', 'setClaudeModel', 'setMyMemoryEmail',
   'setUseNvenc', 'btnSettingsCancel', 'btnSettingsSave', 'toast']) {
   els[id] = document.getElementById(id);
 }
@@ -719,6 +719,7 @@ function openSettings() {
     els.setProvider.appendChild(opt);
   }
   els.setProvider.value = s.provider;
+  els.setTasksEngine.value = s.tasksEngine || 'local';
   els.setClaudeKey.value = s.claudeApiKey;
   els.setClaudeModel.value = s.claudeModel;
   els.setMyMemoryEmail.value = s.myMemoryEmail;
@@ -734,6 +735,7 @@ els.settingsModal.addEventListener('click', (e) => {
 els.btnSettingsSave.onclick = async () => {
   state.settings = await window.api.setSettings({
     provider: els.setProvider.value,
+    tasksEngine: els.setTasksEngine.value,
     claudeApiKey: els.setClaudeKey.value,
     claudeModel: els.setClaudeModel.value,
     myMemoryEmail: els.setMyMemoryEmail.value,

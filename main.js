@@ -185,7 +185,7 @@ ipcMain.handle('burn-subtitles', async (_evt, { videoPath, text, duration, sugge
     (pct) => sendProgress('burn', pct, 'Burning subtitles…'), 'burn');
 });
 
-// Mission-tasks Word report: transcript text → Claude → .docx built locally.
+// Mission-tasks Word report: transcript → local LLM or Claude → .docx built locally.
 ipcMain.handle('generate-tasks', async (_evt, { cues, langName, rtl, videoName, suggestedName }) => {
   const res = await dialog.showSaveDialog(mainWindow, {
     title: 'Save tasks report',
@@ -193,9 +193,11 @@ ipcMain.handle('generate-tasks', async (_evt, { cues, langName, rtl, videoName, 
     filters: [{ name: 'Word document', extensions: ['docx'] }],
   });
   if (res.canceled || !res.filePath) return null;
-  sendProgress('tasks', 0.05, 'Extracting mission tasks…');
-  const report = await tasksLib.generateTasks(cues, langName, settings.get(),
-    (pct) => sendProgress('tasks', pct, 'Extracting mission tasks…'));
+  const engine = settings.get().tasksEngine || 'local';
+  const label = engine === 'claude' ? 'Extracting tasks (Claude API)…' : 'Extracting tasks (local AI)…';
+  sendProgress('tasks', 0.05, label);
+  const report = await tasksLib.generateTasks(engine, tools.loadManifest(), cues, langName,
+    settings.get(), (pct) => sendProgress('tasks', pct, label), 'tasks');
   if (!report.tasks.length) throw new Error('No actionable tasks were found in this transcript.');
   const docx = ops.makeDocx({
     heading: report.heading,

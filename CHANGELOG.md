@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — 2026-07-14
+
+- The tasks report no longer requires an API key: new **local AI engine**
+  (llama.cpp + Qwen2.5-7B-Instruct, ~4.7 GB one-time download via
+  `npm run setup`, GPU-accelerated with CPU fallback, fully offline). It is
+  now the default; the Claude API remains available as the quality option —
+  switch in Settings → "Tasks report engine". `npm run setup -- --no-llm`
+  skips the download.
+
 ## 1.1.0 — 2026-07-14
 
 - New: **Tasks report (Word)** — extracts actionable "mission tasks" for

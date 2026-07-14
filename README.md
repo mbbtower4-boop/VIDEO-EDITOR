@@ -21,6 +21,7 @@ npm run setup        # downloads external tools into tools/ (~2.5 GB, see below)
 | ffmpeg + ffprobe ([BtbN builds](https://github.com/BtbN/FFmpeg-Builds), GPL, includes NVENC + libass) | analysis, cutting, encoding, subtitles | ~170 MB |
 | [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (GPU build + small CPU fallback) | local speech-to-text | ~650 MB |
 | `ggml-large-v3-turbo` model | transcription (all languages) | ~1.6 GB |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) + Qwen2.5-7B-Instruct | offline tasks report (skip with `--no-llm`) | ~4.8 GB |
 
 The script probes the GPU build on your machine and **automatically falls back
 to the CPU build** if it fails (relevant on very new GPU generations). Optional:
@@ -54,8 +55,10 @@ administrator — it breaks Explorer drag-and-drop and hides network drives.
    files, **Embed tracks** (selectable subtitle tracks in one MP4), or
    **Burn-in** one language into the picture.
 6. **Tasks report (Word)** turns the speech into an actionable task checklist
-   for workers (`.docx`, in the language of the selected tab, RTL-aware) —
-   requires a Claude API key in Settings; only the transcript text is sent.
+   for workers (`.docx`, in the language of the selected tab, RTL-aware).
+   Runs fully offline by default on a local AI model (llama.cpp +
+   Qwen2.5-7B-Instruct, installed by `npm run setup`); switch to the Claude
+   API in Settings for the highest quality (only transcript text is sent).
 
 ## Translation methods
 

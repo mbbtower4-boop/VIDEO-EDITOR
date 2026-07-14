@@ -106,7 +106,7 @@
           <button id="btnBurn" disabled title="Burn this tab's subtitles into the picture">Burn-in</button>
         </div>
         <div class="btnRow">
-          <button id="btnTasks" disabled title="Extract mission tasks for workers from the speech (uses Claude API) and save as a Word file">Tasks report (Word)</button>
+          <button id="btnTasks" disabled title="Extract mission tasks for workers from the speech (local AI or Claude API — see Settings) and save as a Word file">Tasks report (Word)</button>
         </div>
       </details>
     </aside>
@@ -118,6 +118,13 @@
       <div class="field">
         <label>Default translation method</label>
         <select id="setProvider"></select>
+      </div>
+      <div class="field">
+        <label>Tasks report engine</label>
+        <select id="setTasksEngine">
+          <option value="local">Local AI model — offline, free (needs the setup download)</option>
+          <option value="claude">Claude API — best quality (needs API key)</option>
+        </select>
       </div>
       <div class="field">
         <label>Claude API key <span class="dim">(stored as plain text in settings.json; only subtitle text is ever sent)</span></label>

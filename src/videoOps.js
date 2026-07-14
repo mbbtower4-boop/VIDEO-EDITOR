@@ -524,6 +524,15 @@
     return { heading: typeof parsed.heading === 'string' ? parsed.heading.trim() : '', tasks };
   }
 
+  // llama-cli invocation for the offline tasks report. The prompt goes via a
+  // file (-f) — a long transcript would blow the Windows command-line limit.
+  // -st = single chat turn, -ngl 99 = offload all layers to the GPU (ignored
+  // by the CPU build), low temperature for stable JSON.
+  function buildLlamaArgs(modelPath, promptFile) {
+    return ['-m', modelPath, '-f', promptFile, '-st', '--no-display-prompt',
+      '-ngl', '99', '--temp', '0.2', '-n', '2048', '-c', '8192'];
+  }
+
   function xmlEscape(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -637,6 +646,6 @@
     whisperJsonToCues, sanitizeCues,
     LANGS, langByCode, PROVIDERS, providerSupports,
     chunkCuesForTranslation, buildClaudePrompt, parseNumberedResponse,
-    buildTasksPrompt, parseTasksResponse, xmlEscape, crc32, makeZip, makeDocx,
+    buildTasksPrompt, parseTasksResponse, buildLlamaArgs, xmlEscape, crc32, makeZip, makeDocx,
   };
 });

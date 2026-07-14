@@ -5,8 +5,11 @@
  * results in tools/manifest.json (read by the app at startup).
  *
  *   node scripts/setup.js            downloads ffmpeg + whisper.cpp + large-v3-turbo model
+ *                                    + llama.cpp with a local LLM (for the offline tasks report)
  *   node scripts/setup.js --full-model   also downloads ggml-large-v3.bin (needed only for
  *                                        the offline translate-to-English provider)
+ *   node scripts/setup.js --no-llm       skip the local LLM (~5 GB); the tasks report then
+ *                                        needs a Claude API key
  *   node scripts/setup.js --force        re-download even if files already exist
  *
  * Zero npm dependencies: plain https + Windows' built-in tar.exe (bsdtar) for zips.
@@ -22,12 +25,16 @@ const TOOLS = path.join(ROOT, 'tools');
 const DL = path.join(TOOLS, '_downloads');
 
 const FULL_MODEL = process.argv.includes('--full-model');
+const NO_LLM = process.argv.includes('--no-llm');
 const FORCE = process.argv.includes('--force');
 
 const FFMPEG_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip';
 const WHISPER_RELEASE_API = 'https://api.github.com/repos/ggml-org/whisper.cpp/releases/latest';
 const MODEL_TURBO_URL = 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin';
 const MODEL_FULL_URL = 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin';
+const LLAMA_RELEASE_API = 'https://api.github.com/repos/ggml-org/llama.cpp/releases/latest';
+// Multilingual instruct model (good Hebrew/Russian), single-file GGUF, ~4.7 GB
+const LLM_MODEL_URL = 'https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf';
 
 function log(msg) { console.log(msg); }
 
@@ -263,6 +270,73 @@ function testWhisper(whisperExe, model, wav, timeoutMs) {
   manifest.whisperBackend = backend;
   manifest.whisperCpuExe = cpuExe;
   manifest.whisperRelease = rel.tag_name;
+
+  // 5. local LLM (llama.cpp + GGUF model) for the offline tasks report
+  if (NO_LLM) {
+    log('[5/5] local LLM: skipped (--no-llm) — the tasks report will need a Claude API key');
+  } else {
+    log('[5/5] local LLM (llama.cpp + Qwen2.5-7B)');
+    const lrel = await fetchJson(LLAMA_RELEASE_API);
+    const lassets = (lrel.assets || []).map((a) => ({ name: a.name, url: a.browser_download_url }));
+    log('  latest llama.cpp release: ' + lrel.tag_name);
+    // Prefer Vulkan (single zip, any GPU); else CUDA (+ separate cudart zip).
+    const lgpu = lassets.find((a) => /bin-win-vulkan.*x64\.zip$/i.test(a.name)) ||
+      lassets.find((a) => /bin-win-cuda.*x64\.zip$/i.test(a.name)) || null;
+    const lcudart = (lgpu && /cuda/i.test(lgpu.name))
+      ? lassets.find((a) => /^cudart-.*win.*\.zip$/i.test(a.name)) : null;
+    const lcpu = lassets.find((a) => /bin-win-cpu-x64\.zip$/i.test(a.name)) ||
+      lassets.find((a) => /bin-win-(avx2|noavx)-x64\.zip$/i.test(a.name)) || null;
+    if (!lgpu && !lcpu) {
+      log('  WARNING: no usable llama.cpp Windows asset found — skipping local LLM.');
+      log('  assets were: ' + lassets.map((a) => a.name).join(', '));
+    } else {
+      const llmModel = path.join(TOOLS, 'models', 'Qwen2.5-7B-Instruct-Q4_K_M.gguf');
+      await download(LLM_MODEL_URL, llmModel, 'Qwen2.5-7B-Instruct (LLM)');
+      let lgpuDir = null, lcpuDir = null;
+      if (lgpu) {
+        const z = path.join(DL, 'llama-gpu.zip');
+        await download(lgpu.url, z, 'llama.cpp (' + (/vulkan/i.test(lgpu.name) ? 'Vulkan' : 'CUDA') + ')');
+        lgpuDir = path.join(TOOLS, 'llama-gpu');
+        if (FORCE || !fs.existsSync(lgpuDir)) extractZip(z, lgpuDir);
+        if (lcudart) {
+          const cz = path.join(DL, 'llama-cudart.zip');
+          await download(lcudart.url, cz, 'CUDA runtime for llama.cpp');
+          extractZip(cz, lgpuDir);
+        }
+      }
+      if (lcpu) {
+        const z = path.join(DL, 'llama-cpu.zip');
+        await download(lcpu.url, z, 'llama.cpp (CPU)');
+        lcpuDir = path.join(TOOLS, 'llama-cpu');
+        if (FORCE || !fs.existsSync(lcpuDir)) extractZip(z, lcpuDir);
+      }
+      const findLlama = (dir) => dir ? findFile(dir, /^llama-cli\.exe$/i) : null;
+      const lgpuExe = findLlama(lgpuDir), lcpuExe = findLlama(lcpuDir);
+      // smoke test: a tiny single-turn generation (-ngl 99 offloads to GPU)
+      const llamaTest = (exe) => {
+        const r = run(exe, ['-m', llmModel, '-p', 'Reply with the single word OK', '-n', '8',
+          '-st', '--no-display-prompt', '-ngl', '99', '--temp', '0'], 300000);
+        return r.status === 0;
+      };
+      let llamaExe = null, llamaBackend = null;
+      if (lgpuExe) {
+        log('  testing llama.cpp GPU build (loads the 4.7 GB model — takes a minute)...');
+        if (llamaTest(lgpuExe)) { llamaExe = lgpuExe; llamaBackend = 'gpu'; log('  GPU build: OK'); }
+        else log('  GPU build FAILED — falling back to CPU build');
+      }
+      if (!llamaExe && lcpuExe) {
+        log('  testing llama.cpp CPU build...');
+        if (llamaTest(lcpuExe)) { llamaExe = lcpuExe; llamaBackend = 'cpu'; log('  CPU build: OK'); }
+        else log('  CPU build FAILED too — local tasks report will be unavailable');
+      }
+      if (llamaExe) {
+        manifest.llamaExe = llamaExe;
+        manifest.llamaBackend = llamaBackend;
+        manifest.llamaRelease = lrel.tag_name;
+        manifest.models.llm = llmModel;
+      }
+    }
+  }
 
   await fsp.writeFile(path.join(TOOLS, 'manifest.json'), JSON.stringify(manifest, null, 2));
   log('');
