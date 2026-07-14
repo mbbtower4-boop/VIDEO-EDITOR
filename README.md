@@ -7,6 +7,9 @@ speech transcription that runs entirely on your own machine.
 
 Built with Electron + vanilla HTML/CSS/JS, no frameworks, no build step.
 
+**New user? See [INSTRUCTIONS.md](INSTRUCTIONS.md)** — a step-by-step install
+and usage guide in English and Hebrew.
+
 ## Setup (one time)
 
 ```bash
