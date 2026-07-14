@@ -482,6 +482,148 @@
     return out;
   }
 
+  // ---- mission-tasks report (Word .docx) ------------------------------------------
+
+  function buildTasksPrompt(transcript, targetLangName) {
+    return 'The following is a transcript of a spoken work/site video. Extract the actionable ' +
+      'tasks ("mission tasks") that workers should carry out, based on what is said.\n' +
+      'Reply with ONLY valid JSON, no markdown fences, in exactly this shape:\n' +
+      '{"heading": "<short report title>", "tasks": [{"title": "<short imperative task>", ' +
+      '"details": "<1-2 sentences with the specifics mentioned: places, quantities, names, deadlines>", ' +
+      '"priority": "high" | "normal" | "low"}]}\n' +
+      'Write the heading, titles and details in ' + targetLangName + '. Merge duplicate tasks. ' +
+      'If nothing actionable is said, return {"heading": "...", "tasks": []}.\n\n' +
+      'Transcript:\n' + transcript;
+  }
+
+  function parseTasksResponse(text) {
+    let t = String(text).trim()
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/```\s*$/, '')
+      .trim();
+    const objStart = t.indexOf('{');
+    const arrStart = t.indexOf('[');
+    let parsed;
+    try {
+      if (objStart !== -1 && (arrStart === -1 || objStart < arrStart)) {
+        parsed = JSON.parse(t.slice(objStart, t.lastIndexOf('}') + 1));
+      } else if (arrStart !== -1) {
+        parsed = { heading: '', tasks: JSON.parse(t.slice(arrStart, t.lastIndexOf(']') + 1)) };
+      }
+    } catch (e) { /* handled below */ }
+    if (!parsed || !Array.isArray(parsed.tasks)) {
+      throw new Error('Could not parse a task list from the model reply.');
+    }
+    const tasks = parsed.tasks
+      .filter((x) => x && typeof x.title === 'string' && x.title.trim())
+      .map((x) => ({
+        title: x.title.trim(),
+        details: typeof x.details === 'string' ? x.details.trim() : '',
+        priority: ['high', 'normal', 'low'].includes(x.priority) ? x.priority : 'normal',
+      }));
+    return { heading: typeof parsed.heading === 'string' ? parsed.heading.trim() : '', tasks };
+  }
+
+  function xmlEscape(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Minimal ZIP writer (method 0 = stored, fixed timestamp so output is
+  // deterministic). A .docx is just such a zip of XML parts.
+  const CRC_TABLE = (function () {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function makeZip(entries) {
+    const enc = new TextEncoder();
+    const num = (n, w) => {
+      const a = new Uint8Array(w);
+      for (let i = 0; i < w; i++) a[i] = (n >>> (8 * i)) & 0xFF;
+      return a;
+    };
+    const parts = [], central = [];
+    let offset = 0, centralSize = 0;
+    for (const e of entries) {
+      const name = enc.encode(e.name), data = e.data, crc = crc32(data);
+      const head = [num(0x04034b50, 4), num(20, 2), num(0x0800, 2), num(0, 2),
+        num(0, 2), num(0x21, 2), num(crc, 4), num(data.length, 4), num(data.length, 4),
+        num(name.length, 2), num(0, 2), name, data];
+      const cen = [num(0x02014b50, 4), num(20, 2), num(20, 2), num(0x0800, 2), num(0, 2),
+        num(0, 2), num(0x21, 2), num(crc, 4), num(data.length, 4), num(data.length, 4),
+        num(name.length, 2), num(0, 2), num(0, 2), num(0, 2), num(0, 2), num(0, 4),
+        num(offset, 4), name];
+      for (const b of head) { parts.push(b); offset += b.length; }
+      for (const b of cen) { central.push(b); centralSize += b.length; }
+    }
+    const end = [num(0x06054b50, 4), num(0, 2), num(0, 2), num(entries.length, 2),
+      num(entries.length, 2), num(centralSize, 4), num(offset, 4), num(0, 2)];
+    const all = parts.concat(central, end);
+    const total = all.reduce((s, a) => s + a.length, 0);
+    const out = new Uint8Array(total);
+    let pos = 0;
+    for (const a of all) { out.set(a, pos); pos += a.length; }
+    return out;
+  }
+
+  const DOCX_CONTENT_TYPES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+    '</Types>';
+  const DOCX_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+    '</Relationships>';
+  const DOCX_DOC_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>';
+
+  // Build a complete .docx (as Uint8Array) with the task list.
+  // opts: { heading, videoName, generatedOn, rtl, tasks:[{title, details, priority}] }
+  function makeDocx(opts) {
+    const o = opts || {};
+    const rtl = !!o.rtl;
+    const rtlRun = rtl ? '<w:rtl/>' : '';
+    const para = (runs) => '<w:p>' + (rtl ? '<w:pPr><w:bidi/></w:pPr>' : '') + runs + '</w:p>';
+    const run = (text, props) => '<w:r><w:rPr>' + (props || '') + rtlRun + '</w:rPr>' +
+      '<w:t xml:space="preserve">' + xmlEscape(text) + '</w:t></w:r>';
+    const body = [];
+    body.push(para(run(o.heading || 'Mission tasks', '<w:b/><w:sz w:val="36"/><w:szCs w:val="36"/>')));
+    const meta = [o.videoName, o.generatedOn].filter(Boolean).join(' · ');
+    if (meta) body.push(para(run(meta, '<w:color w:val="666666"/>')));
+    body.push(para(run(' ')));
+    (o.tasks || []).forEach((t, i) => {
+      const mark = t.priority === 'high' ? '❗ ' : '';
+      body.push(para(run('☐ ' + (i + 1) + '. ' + mark + t.title,
+        '<w:b/><w:sz w:val="24"/><w:szCs w:val="24"/>')));
+      if (t.details) body.push(para(run(t.details)));
+      body.push(para(run(' ')));
+    });
+    const doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:body>' + body.join('') + '</w:body></w:document>';
+    const enc = new TextEncoder();
+    return makeZip([
+      { name: '[Content_Types].xml', data: enc.encode(DOCX_CONTENT_TYPES) },
+      { name: '_rels/.rels', data: enc.encode(DOCX_RELS) },
+      { name: 'word/_rels/document.xml.rels', data: enc.encode(DOCX_DOC_RELS) },
+      { name: 'word/document.xml', data: enc.encode(doc) },
+    ]);
+  }
+
   return {
     parseSilence, parseFreeze,
     sortSegments, mergeSegments, intersectSegments, unionSegments,
@@ -495,5 +637,6 @@
     whisperJsonToCues, sanitizeCues,
     LANGS, langByCode, PROVIDERS, providerSupports,
     chunkCuesForTranslation, buildClaudePrompt, parseNumberedResponse,
+    buildTasksPrompt, parseTasksResponse, xmlEscape, crc32, makeZip, makeDocx,
   };
 });

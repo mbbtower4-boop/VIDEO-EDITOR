@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 — 2026-07-14
+
+- New: **Tasks report (Word)** — extracts actionable "mission tasks" for
+  workers from the video's speech (via the Claude API; only the transcript
+  text is sent) and saves them as a `.docx` checklist with title, details and
+  priority markers. Generated in the language of the selected tab, with full
+  RTL layout for Hebrew. The .docx writer is built in (zero dependencies) and
+  covered by headless tests.
+
 ## 1.0.3 — 2026-07-14
 
 - Manual cuts: drag across an empty part of the cuts lane to mark any exact

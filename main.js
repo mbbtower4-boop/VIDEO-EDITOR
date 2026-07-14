@@ -8,6 +8,7 @@ const analyze = require('./lib/analyze.js');
 const exporter = require('./lib/exporter.js');
 const transcriber = require('./lib/transcribe.js');
 const translateReg = require('./lib/translate/index.js');
+const tasksLib = require('./lib/tasks.js');
 const settings = require('./lib/settings.js');
 const ops = require('./src/videoOps.js');
 
@@ -182,6 +183,29 @@ ipcMain.handle('burn-subtitles', async (_evt, { videoPath, text, duration, sugge
   return exporter.burnSubtitles(manifest, videoPath, text, res.filePath,
     { duration, useNvenc: settings.get().useNvenc },
     (pct) => sendProgress('burn', pct, 'Burning subtitles…'), 'burn');
+});
+
+// Mission-tasks Word report: transcript text → Claude → .docx built locally.
+ipcMain.handle('generate-tasks', async (_evt, { cues, langName, rtl, videoName, suggestedName }) => {
+  const res = await dialog.showSaveDialog(mainWindow, {
+    title: 'Save tasks report',
+    defaultPath: suggestedName || 'tasks.docx',
+    filters: [{ name: 'Word document', extensions: ['docx'] }],
+  });
+  if (res.canceled || !res.filePath) return null;
+  sendProgress('tasks', 0.05, 'Extracting mission tasks…');
+  const report = await tasksLib.generateTasks(cues, langName, settings.get(),
+    (pct) => sendProgress('tasks', pct, 'Extracting mission tasks…'));
+  if (!report.tasks.length) throw new Error('No actionable tasks were found in this transcript.');
+  const docx = ops.makeDocx({
+    heading: report.heading,
+    videoName,
+    generatedOn: new Date().toLocaleDateString(),
+    rtl,
+    tasks: report.tasks,
+  });
+  await fs.writeFile(res.filePath, Buffer.from(docx));
+  return { outPath: res.filePath, count: report.tasks.length };
 });
 
 ipcMain.handle('get-settings', () => settings.getSanitized());

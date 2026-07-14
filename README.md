@@ -53,6 +53,9 @@ administrator — it breaks Explorer drag-and-drop and hides network drives.
 5. **Translate** each language tab with your choice of method, then save `.srt`
    files, **Embed tracks** (selectable subtitle tracks in one MP4), or
    **Burn-in** one language into the picture.
+6. **Tasks report (Word)** turns the speech into an actionable task checklist
+   for workers (`.docx`, in the language of the selected tab, RTL-aware) —
+   requires a Claude API key in Settings; only the transcript text is sent.
 
 ## Translation methods
 

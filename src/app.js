@@ -38,7 +38,7 @@ for (const id of ['version', 'btnOpen', 'btnAnalyze', 'btnExport', 'btnSettings'
   'video', 'dropHint', 'btnPlay', 'btnBack5', 'btnFwd5', 'chkSkipCuts', 'timeReadout',
   'statsReadout', 'tlCanvas', 'selMode', 'inNoiseDb', 'noiseDbVal', 'inPadLead', 'inPadTail',
   'inMinCut', 'inFreezeNoise', 'inFreezeDur', 'btnReanalyze', 'btnTranscribe', 'langTabs',
-  'selProvider', 'btnTranslate', 'cueList', 'btnSaveSrt', 'btnSaveAll', 'btnMux', 'btnBurn',
+  'selProvider', 'btnTranslate', 'cueList', 'btnSaveSrt', 'btnSaveAll', 'btnMux', 'btnBurn', 'btnTasks',
   'settingsModal', 'setProvider', 'setClaudeKey', 'setClaudeModel', 'setMyMemoryEmail',
   'setUseNvenc', 'btnSettingsCancel', 'btnSettingsSave', 'toast']) {
   els[id] = document.getElementById(id);
@@ -594,6 +594,7 @@ function refreshCueUI() {
   els.btnSaveAll.disabled = !any;
   els.btnMux.disabled = !any;
   els.btnBurn.disabled = !getTabCues(state.tab) || state.tab === 'orig' && !state.cues;
+  els.btnTasks.disabled = !getTabCues(state.tab);
 }
 
 els.langTabs.addEventListener('click', (e) => {
@@ -687,6 +688,23 @@ els.btnBurn.onclick = async () => {
       suggestedName: srtBase() + '.' + code + '.burned.mp4',
     }));
   if (res) toast('Saved ' + res.outPath);
+};
+
+// Mission-tasks Word report from the current tab's transcript.
+els.btnTasks.onclick = async () => {
+  const cues = getTabCues(state.tab);
+  if (!cues) return;
+  const lang = state.tab === 'orig' ? ops.langByCode(state.srcLang) : ops.langByCode(state.tab);
+  const langName = lang ? lang.name : 'the same language as the transcript';
+  const res = await withJob('tasks', 'Extracting mission tasks…', () =>
+    window.api.generateTasks({
+      cues: cues.map((c) => ({ start: c.start, end: c.end, text: c.text })),
+      langName,
+      rtl: !!(lang && lang.rtl),
+      videoName: state.name,
+      suggestedName: srtBase() + '.tasks.docx',
+    }));
+  if (res) toast('Saved ' + res.count + ' tasks to ' + res.outPath);
 };
 
 // ---- settings modal ---------------------------------------------------------------------------

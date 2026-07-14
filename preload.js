@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('api', {
   saveSrtBundle: (videoPath, files) => ipcRenderer.invoke('save-srt-bundle', { videoPath, files }),
   muxSubtitles: (payload) => ipcRenderer.invoke('mux-subtitles', payload),
   burnSubtitles: (payload) => ipcRenderer.invoke('burn-subtitles', payload),
+  generateTasks: (payload) => ipcRenderer.invoke('generate-tasks', payload),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   setSettings: (patch) => ipcRenderer.invoke('set-settings', patch),
   cancelJob: (jobId) => ipcRenderer.invoke('cancel-job', jobId),

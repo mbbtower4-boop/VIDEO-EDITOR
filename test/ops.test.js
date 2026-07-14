@@ -245,6 +245,48 @@ check('parseNumberedResponse basic + both number styles', parsed[0] === 'שלו�
 check('parseNumberedResponse joins continuation lines', parsed[1] === 'мир continued');
 check('parseNumberedResponse count mismatch throws', throws(() => ops.parseNumberedResponse('1. only', 3)));
 
+// ---- mission-tasks report (.docx) ----
+const tprompt = ops.buildTasksPrompt('line one\nline two', 'Hebrew');
+check('buildTasksPrompt embeds transcript + language', tprompt.includes('line two') && tprompt.includes('in Hebrew'));
+
+const tr1 = ops.parseTasksResponse('{"heading":"משימות","tasks":[{"title":"לתקן את הגדר","details":"ליד שער 3","priority":"high"}]}');
+check('parseTasksResponse plain JSON', tr1.heading === 'משימות' && tr1.tasks.length === 1 && tr1.tasks[0].priority === 'high');
+const tr2 = ops.parseTasksResponse('```json\n{"heading":"T","tasks":[{"title":"a"},{"title":"  "},{"title":"b","priority":"urgent"}]}\n```');
+check('parseTasksResponse strips fences, drops empty titles, coerces priority',
+  tr2.tasks.length === 2 && tr2.tasks[1].priority === 'normal');
+check('parseTasksResponse bare array accepted', ops.parseTasksResponse('[{"title":"x"}]').tasks.length === 1);
+check('parseTasksResponse garbage throws', throws(() => ops.parseTasksResponse('sorry, no tasks here')));
+
+check('xmlEscape', ops.xmlEscape('a<b>&"c"') === 'a&lt;b&gt;&amp;&quot;c&quot;');
+check('crc32 known value', ops.crc32(new TextEncoder().encode('123456789')) === 0xCBF43926);
+
+function findBytes(hay, needleStr) {
+  const needle = new TextEncoder().encode(needleStr);
+  outer: for (let i = 0; i <= hay.length - needle.length; i++) {
+    for (let j = 0; j < needle.length; j++) if (hay[i + j] !== needle[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+
+const docx = ops.makeDocx({
+  heading: 'משימות לעובדים', videoName: 'site.mp4', generatedOn: '14/07/2026', rtl: true,
+  tasks: [
+    { title: 'לתקן את הגדר', details: 'ליד שער 3, עד יום חמישי', priority: 'high' },
+    { title: 'Order <cement> & "sand"', details: '', priority: 'normal' },
+  ],
+});
+check('makeDocx returns zip (PK header)', docx[0] === 0x50 && docx[1] === 0x4B && docx[2] === 3 && docx[3] === 4);
+check('makeDocx contains document.xml part', findBytes(docx, 'word/document.xml') !== -1);
+check('makeDocx contains Hebrew heading (UTF-8)', findBytes(docx, 'משימות לעובדים') !== -1);
+check('makeDocx escapes XML specials', findBytes(docx, '&lt;cement&gt; &amp; &quot;sand&quot;') !== -1);
+check('makeDocx rtl paragraphs', findBytes(docx, '<w:bidi/>') !== -1);
+check('makeDocx high-priority marker', findBytes(docx, '❗') !== -1);
+const eocd = docx.length - 22;
+check('makeDocx end-of-central-directory record', docx[eocd] === 0x50 && docx[eocd + 1] === 0x4B &&
+  docx[eocd + 2] === 5 && docx[eocd + 3] === 6);
+check('makeDocx LTR when rtl=false', findBytes(ops.makeDocx({ heading: 'Tasks', tasks: [{ title: 'x', details: '', priority: 'normal' }] }), '<w:bidi/>') === -1);
+
 // ---- summary ----
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
