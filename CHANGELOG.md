@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.2 — 2026-07-14
+
+- Tasks report now always covers the FULL video length. The local model's
+  reading window was 8k tokens, so long transcripts were silently cut and few
+  tasks came back. Now: 32k window (≈ an hour of speech), automatic splitting
+  of even longer transcripts into parts with merged de-duplicated results, and
+  a prompt that demands beginning-to-end coverage. Verified with tasks planted
+  at the start, middle and end of a long transcript.
+
 ## 1.2.1 — 2026-07-14
 
 - Fix: task extraction with the local model failed to parse — llama-cli echoes

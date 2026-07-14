@@ -267,6 +267,19 @@ const trEcho = ops.parseTasksResponse(echoed);
 check('parseTasksResponse skips echoed prompt, takes final JSON',
   trEcho.heading === 'Site tasks' && trEcho.tasks.length === 1 && trEcho.tasks[0].priority === 'high');
 
+const manyCues2 = Array.from({ length: 30 }, (_, i) => ({ start: i, end: i + 1, text: 'x'.repeat(100) }));
+const split = ops.splitCuesForTasks(manyCues2, 1000);
+check('splitCuesForTasks respects budget, drops nothing',
+  split.length === 4 && split.flat().length === 30 && split[0].length === 9);
+check('splitCuesForTasks single chunk when it fits', ops.splitCuesForTasks(manyCues2, 1e6).length === 1);
+
+const merged = ops.mergeTaskReports([
+  { heading: 'A', tasks: [{ title: 'Fix fence', details: 'x', priority: 'high' }] },
+  { heading: 'B', tasks: [{ title: 'fix FENCE', details: 'dup', priority: 'normal' }, { title: 'Order sand', details: '', priority: 'normal' }] },
+]);
+check('mergeTaskReports dedupes titles, keeps first heading',
+  merged.heading === 'A' && merged.tasks.length === 2 && merged.tasks[1].title === 'Order sand');
+
 const llargs = ops.buildLlamaArgs('D:\\m\\q.gguf', 'D:\\t\\p.txt');
 check('buildLlamaArgs prompt via file + single turn + GPU offload',
   llargs.join(' ').includes('-f D:\\t\\p.txt') && llargs.includes('-st') && llargs.includes('-ngl'));

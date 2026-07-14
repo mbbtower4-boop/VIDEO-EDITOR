@@ -487,6 +487,8 @@
   function buildTasksPrompt(transcript, targetLangName) {
     return 'The following is a transcript of a spoken work/site video. Extract the actionable ' +
       'tasks ("mission tasks") that workers should carry out, based on what is said.\n' +
+      'Go through the ENTIRE transcript from beginning to end — tasks are often mentioned ' +
+      'throughout, and every distinct one must be listed, not just the first.\n' +
       'Reply with ONLY valid JSON, no markdown fences, in exactly this shape:\n' +
       '{"heading": "<short report title>", "tasks": [{"title": "<short imperative task>", ' +
       '"details": "<1-2 sentences with the specifics mentioned: places, quantities, names, deadlines>", ' +
@@ -542,10 +544,45 @@
   // llama-cli invocation for the offline tasks report. The prompt goes via a
   // file (-f) — a long transcript would blow the Windows command-line limit.
   // -st = single chat turn, -ngl 99 = offload all layers to the GPU (ignored
-  // by the CPU build), low temperature for stable JSON.
+  // by the CPU build), low temperature for stable JSON. -c 32768 is Qwen2.5's
+  // full window (~1 h of speech); longer transcripts are chunked by the caller.
   function buildLlamaArgs(modelPath, promptFile) {
     return ['-m', modelPath, '-f', promptFile, '-st', '--no-display-prompt',
-      '-ngl', '99', '--temp', '0.2', '-n', '2048', '-c', '8192'];
+      '-ngl', '99', '--temp', '0.2', '-n', '3072', '-c', '32768'];
+  }
+
+  // Split cues into transcript chunks that safely fit the local model's
+  // context window (maxChars ≈ chars, not tokens — callers pass a conservative
+  // budget). Returns an array of cue-arrays, in order, nothing dropped.
+  function splitCuesForTasks(cues, maxChars) {
+    const out = [];
+    let cur = [], chars = 0;
+    for (const c of cues) {
+      const len = String(c.text).length + 1;
+      if (cur.length && chars + len > maxChars) { out.push(cur); cur = []; chars = 0; }
+      cur.push(c);
+      chars += len;
+    }
+    if (cur.length) out.push(cur);
+    return out;
+  }
+
+  // Merge task lists from transcript chunks: first heading wins, tasks are
+  // concatenated in order, exact-duplicate titles dropped (case-insensitive).
+  function mergeTaskReports(reports) {
+    const seen = new Set();
+    const tasks = [];
+    let heading = '';
+    for (const r of reports) {
+      if (!heading && r.heading) heading = r.heading;
+      for (const t of r.tasks) {
+        const key = t.title.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        tasks.push(t);
+      }
+    }
+    return { heading, tasks };
   }
 
   function xmlEscape(s) {
@@ -661,6 +698,7 @@
     whisperJsonToCues, sanitizeCues,
     LANGS, langByCode, PROVIDERS, providerSupports,
     chunkCuesForTranslation, buildClaudePrompt, parseNumberedResponse,
-    buildTasksPrompt, parseTasksResponse, buildLlamaArgs, xmlEscape, crc32, makeZip, makeDocx,
+    buildTasksPrompt, parseTasksResponse, buildLlamaArgs, splitCuesForTasks, mergeTaskReports,
+    xmlEscape, crc32, makeZip, makeDocx,
   };
 });
