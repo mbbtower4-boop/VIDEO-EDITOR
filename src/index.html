@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- media-src file: is the one deviation from the Paperweight CSP: the
+       <video> element streams the opened file straight from disk. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' file: blob:; connect-src 'none'">
+  <title>VIDEO EDITOR</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="toolbar">
+    <div class="brand">VIDEO&nbsp;EDITOR <span id="version" class="dim"></span></div>
+    <button id="btnOpen" title="Open a video (Ctrl+O)">Open</button>
+    <button id="btnAnalyze" disabled title="Detect dead time">Analyze</button>
+    <button id="btnExport" disabled title="Export trimmed video (Ctrl+E)">Export</button>
+    <div class="spacer"></div>
+    <div id="fileInfo" class="dim"></div>
+    <button id="btnSettings" title="Settings">⚙</button>
+  </header>
+
+  <div id="toolsBanner" class="banner hidden">
+    External tools are not installed yet. Open a terminal in the project folder and run
+    <code>npm run setup</code> (~2.5&nbsp;GB download: ffmpeg + whisper.cpp + speech model), then restart the app.
+    <span id="toolsDetail"></span>
+  </div>
+
+  <div id="progressBar" class="hidden">
+    <div id="progressTrack"><div id="progressFill"></div></div>
+    <span id="progressText"></span>
+    <button id="btnCancel">Cancel</button>
+  </div>
+
+  <main>
+    <section id="videoArea">
+      <div id="videoWrap">
+        <video id="video"></video>
+        <div id="dropHint">Open a video to begin<br><span class="dim">MP4 · MOV · MKV · WEBM</span></div>
+      </div>
+      <div id="transport">
+        <button id="btnPlay" disabled>▶</button>
+        <button id="btnBack5" disabled>−5s</button>
+        <button id="btnFwd5" disabled>+5s</button>
+        <label class="chk"><input type="checkbox" id="chkSkipCuts" checked> Preview with cuts applied</label>
+        <span id="timeReadout" class="mono"></span>
+        <div class="spacer"></div>
+        <span id="statsReadout"></span>
+      </div>
+      <section id="timeline">
+        <canvas id="tlCanvas"></canvas>
+        <div id="tlHelp" class="dim">click cut = keep/remove · drag edge = adjust · right-click = add/delete cut · wheel = zoom · shift+wheel = pan</div>
+      </section>
+    </section>
+
+    <aside id="sidebar">
+      <details open>
+        <summary>Dead-time detection</summary>
+        <div class="field">
+          <label>Cut when</label>
+          <select id="selMode">
+            <option value="silence">Silent</option>
+            <option value="freeze">Frozen picture</option>
+            <option value="both">Silent AND frozen</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Silence threshold <span id="noiseDbVal" class="mono"></span></label>
+          <input type="range" id="inNoiseDb" min="-60" max="-20" step="1">
+        </div>
+        <div class="field two">
+          <label>Keep after speech <input type="number" id="inPadLead" min="0" max="3" step="0.05"> s</label>
+          <label>Keep before speech <input type="number" id="inPadTail" min="0" max="3" step="0.05"> s</label>
+        </div>
+        <div class="field">
+          <label>Ignore cuts shorter than <input type="number" id="inMinCut" min="0" max="10" step="0.1"> s</label>
+        </div>
+        <div class="field two">
+          <label>Freeze sensitivity <input type="number" id="inFreezeNoise" min="-80" max="-20" step="1"> dB</label>
+          <label>Freeze min <input type="number" id="inFreezeDur" min="0.5" max="30" step="0.5"> s</label>
+        </div>
+        <button id="btnReanalyze" class="wide" disabled>Re-analyze</button>
+      </details>
+
+      <details open>
+        <summary>Subtitles &amp; translation</summary>
+        <button id="btnTranscribe" class="wide" disabled>Transcribe speech (local)</button>
+        <div id="langTabs" class="tabs">
+          <button data-lang="orig" class="tab active">Original</button>
+          <button data-lang="he" class="tab">עברית</button>
+          <button data-lang="en" class="tab">English</button>
+          <button data-lang="ru" class="tab">Русский</button>
+          <button data-lang="be" class="tab">Беларуская</button>
+        </div>
+        <div class="field" id="translateRow">
+          <select id="selProvider"></select>
+          <button id="btnTranslate" disabled>Translate</button>
+        </div>
+        <div id="cueList"></div>
+        <div class="btnRow">
+          <button id="btnSaveSrt" disabled title="Save this tab as .srt">Save .srt</button>
+          <button id="btnSaveAll" disabled title="Save every language next to the video">Save all</button>
+        </div>
+        <div class="btnRow">
+          <button id="btnMux" disabled title="Embed all languages as selectable tracks">Embed tracks</button>
+          <button id="btnBurn" disabled title="Burn this tab's subtitles into the picture">Burn-in</button>
+        </div>
+      </details>
+    </aside>
+  </main>
+
+  <div id="settingsModal" class="modal hidden">
+    <div class="modalBox">
+      <h2>Settings</h2>
+      <div class="field">
+        <label>Default translation method</label>
+        <select id="setProvider"></select>
+      </div>
+      <div class="field">
+        <label>Claude API key <span class="dim">(stored as plain text in settings.json; only subtitle text is ever sent)</span></label>
+        <input type="password" id="setClaudeKey" placeholder="sk-ant-…">
+      </div>
+      <div class="field">
+        <label>Claude model</label>
+        <select id="setClaudeModel">
+          <option value="claude-opus-4-8">claude-opus-4-8 (best)</option>
+          <option value="claude-haiku-4-5">claude-haiku-4-5 (cheap &amp; fast)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>MyMemory contact email <span class="dim">(optional — raises the free daily quota)</span></label>
+        <input type="email" id="setMyMemoryEmail" placeholder="you@example.com">
+      </div>
+      <label class="chk"><input type="checkbox" id="setUseNvenc"> Use GPU encoding (NVENC) when available</label>
+      <div class="btnRow right">
+        <button id="btnSettingsCancel">Cancel</button>
+        <button id="btnSettingsSave" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <script src="videoOps.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

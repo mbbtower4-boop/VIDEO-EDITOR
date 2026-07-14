@@ -1,0 +1,6 @@
+node_modules/
+tools/
+samples/
+*.mp4
+*.srt
+*.log
