@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.3 — 2026-07-14
+
+- Tasks report granularity: the prompt now requires every distinct
+  instruction, correction, value and "always do X" rule to be its own
+  checklist item — merging several actions into one summary task is
+  forbidden, and priorities are calibrated (high = urgent/safety only).
+  On a real 3.5-minute tutorial video this went from 1 task to 9.
+
 ## 1.2.2 — 2026-07-14
 
 - Tasks report now always covers the FULL video length. The local model's

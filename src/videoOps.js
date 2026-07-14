@@ -485,15 +485,22 @@
   // ---- mission-tasks report (Word .docx) ------------------------------------------
 
   function buildTasksPrompt(transcript, targetLangName) {
-    return 'The following is a transcript of a spoken work/site video. Extract the actionable ' +
-      'tasks ("mission tasks") that workers should carry out, based on what is said.\n' +
-      'Go through the ENTIRE transcript from beginning to end — tasks are often mentioned ' +
-      'throughout, and every distinct one must be listed, not just the first.\n' +
+    return 'The following is a transcript of a spoken work/site video. Extract EVERY actionable ' +
+      'instruction, correction, rule or reminder ("mission tasks") that workers should carry out.\n' +
+      'Rules:\n' +
+      '- Go through the ENTIRE transcript from beginning to end; instructions appear throughout.\n' +
+      '- Each distinct instruction is its OWN task. NEVER merge several actions into one summary ' +
+      'task — if the speaker gives steps, corrections, values to use, things to delete/change, or ' +
+      '"always do X" rules, each one is a separate checklist item. A typical briefing yields 4-15 tasks.\n' +
+      '- Keep every concrete number, value, name, place and deadline that is mentioned.\n' +
+      '- Only skip content that contains no action at all (small talk, descriptions).\n' +
+      '- priority is "high" ONLY for urgent or safety-critical items the speaker stresses; ' +
+      'most tasks are "normal".\n' +
       'Reply with ONLY valid JSON, no markdown fences, in exactly this shape:\n' +
       '{"heading": "<short report title>", "tasks": [{"title": "<short imperative task>", ' +
-      '"details": "<1-2 sentences with the specifics mentioned: places, quantities, names, deadlines>", ' +
+      '"details": "<1-2 sentences with the specifics mentioned>", ' +
       '"priority": "high" | "normal" | "low"}]}\n' +
-      'Write the heading, titles and details in ' + targetLangName + '. Merge duplicate tasks. ' +
+      'Write the heading, titles and details in ' + targetLangName + '. ' +
       'If nothing actionable is said, return {"heading": "...", "tasks": []}.\n\n' +
       'Transcript:\n' + transcript;
   }
