@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.5 — 2026-07-14
+
+- Setup: downloads are verified against the server-declared size — a dropped
+  connection previously could leave a truncated model file that made whisper
+  fail in confusing ways on every backend.
+
 ## 1.2.4 — 2026-07-14
 
 - Setup on machines without a working GPU: the whisper smoke test now prints

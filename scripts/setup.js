@@ -98,6 +98,13 @@ function download(url, dest, label) {
       res.pipe(out);
       out.on('finish', () => {
         out.close(() => {
+          // a dropped connection can end the stream early without an error —
+          // an incomplete model file then fails in confusing ways later
+          if (total && got !== total) {
+            fs.unlinkSync(tmp);
+            return reject(new Error(label + ' download incomplete (' + fmtMB(got) +
+              ' of ' + fmtMB(total) + ') — check the connection and run setup again.'));
+          }
           fs.renameSync(tmp, dest);
           log(`  ${label}: done (${fmtMB(got)})`);
           resolve(dest);
