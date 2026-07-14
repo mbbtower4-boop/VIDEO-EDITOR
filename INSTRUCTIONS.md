@@ -86,18 +86,33 @@ That's it. From now on, just double-click `VideoEditor.vbs`.
    with checkboxes, details and priorities. Runs fully offline on the local
    AI model; no API key needed.
 
+### Updating to a new version
+
+1. Download the latest ZIP from the GitHub page (**Code → Download ZIP**) and
+   extract it.
+2. **Move the `tools` folder** from your old folder into the new one — this
+   keeps the gigabytes you already downloaded.
+3. In the new folder run `npm install` and then `npm run setup` (it skips
+   everything that is already downloaded and finishes quickly).
+
 ### Troubleshooting
 
 - **"Unknown command: INSTALL"** — the commands must be lowercase: `npm install`.
-- **"SETUP FAILED: whisper ... smoke test failed"** — download the latest ZIP
-  of the tool (this was improved), replace the files, and run `npm run setup`
-  again. To avoid re-downloading gigabytes, first move the `tools` folder from
-  the old folder into the new one. On PCs without an NVIDIA card the tool runs
-  on the CPU (slower); on PCs with little memory it automatically switches to
-  a smaller speech model.
-- **Antivirus warning** — some antivirus programs block the downloaded
-  `whisper-cli.exe` / `ffmpeg.exe`. Add an exclusion for the tool's folder and
-  run `npm run setup` again.
+- **"SETUP FAILED: whisper ... smoke test failed"** — first update to the
+  latest version (see above): newer versions print the exact error, verify
+  that downloads are complete, and switch to a smaller speech model
+  automatically on low-memory PCs. Then run `npm run setup` again and read
+  the message it prints.
+- **Antivirus / company laptop** — this is the most common cause on work
+  computers: the antivirus silently blocks the downloaded `whisper-cli.exe` /
+  `ffmpeg.exe`. Check the antivirus quarantine/history, **add an exclusion
+  for the tool's folder** (ask IT if it's managed), then run `npm run setup`
+  again.
+- **NVIDIA GPUs** — any reasonably modern NVIDIA card (GeForce RTX / Quadro /
+  RTX A-series) is supported and used automatically. No NVIDIA card at all is
+  also fine — the tool runs on the CPU, just slower.
+- Setup can always be re-run safely: `npm run setup` never re-downloads what
+  already exists.
 
 ### Tips
 
@@ -187,16 +202,30 @@ That's it. From now on, just double-click `VideoEditor.vbs`.
 2. מתקבל קובץ `.docx` עם צ'קליסט של כל הוראה שנאמרה בסרטון — עם תיבות
    סימון, פירוט ועדיפויות. רץ לגמרי אופליין על מודל ה-AI המקומי, בלי מפתח API.
 
+### עדכון לגרסה חדשה
+
+1. מורידים את ה-ZIP העדכני מעמוד ה-GitHub‏ (**Code ← Download ZIP**) ומחלצים.
+2. **מעבירים את תיקיית `tools`** מהתיקייה הישנה לחדשה — כך נשמרות הג'יגות
+   שכבר ירדו.
+3. בתיקייה החדשה מריצים `npm install` ואז `npm run setup` (הוא מדלג על כל
+   מה שכבר ירד ומסתיים מהר).
+
 ### פתרון תקלות
 
 - **"Unknown command: INSTALL"** — הפקודות חייבות אותיות קטנות: `npm install`.
-- **"SETUP FAILED: whisper ... smoke test failed"** — להוריד את ה-ZIP העדכני
-  של הכלי (זה שופר), להחליף את הקבצים, ולהריץ שוב `npm run setup`. כדי לא
-  להוריד שוב ג'יגות — קודם להעביר את תיקיית `tools` מהתיקייה הישנה לחדשה.
-  במחשב בלי כרטיס NVIDIA הכלי רץ על המעבד (לאט יותר); במחשב עם מעט זיכרון
-  הוא עובר אוטומטית למודל דיבור קטן יותר.
-- **חסימת אנטי-וירוס** — יש תוכנות שחוסמות את `whisper-cli.exe` / `ffmpeg.exe`
-  שהורדו. מוסיפים החרגה לתיקיית הכלי ומריצים שוב `npm run setup`.
+- **"SETUP FAILED: whisper ... smoke test failed"** — קודם כל לעדכן לגרסה
+  האחרונה (ראו למעלה): הגרסאות החדשות מדפיסות את השגיאה המדויקת, מוודאות
+  שההורדות שלמות, ועוברות אוטומטית למודל דיבור קטן במחשב עם מעט זיכרון.
+  אחר כך להריץ שוב `npm run setup` ולקרוא את ההודעה שמודפסת.
+- **אנטי-וירוס / מחשב של העבודה** — הסיבה הנפוצה ביותר במחשבים ארגוניים:
+  האנטי-וירוס חוסם בשקט את `whisper-cli.exe` / `ffmpeg.exe` שהורדו. בודקים
+  בהסגר/היסטוריה של האנטי-וירוס, **מוסיפים החרגה לתיקיית הכלי** (אם המחשב
+  מנוהל — לבקש מה-IT), ומריצים שוב `npm run setup`.
+- **כרטיסי NVIDIA** — כל כרטיס NVIDIA מודרני (GeForce RTX / Quadro /
+  RTX A-series) נתמך ומנוצל אוטומטית. גם בלי כרטיס NVIDIA בכלל הכול עובד —
+  על המעבד, רק לאט יותר.
+- תמיד אפשר להריץ שוב את ההתקנה בבטחה: `npm run setup` לא מוריד מחדש את מה
+  שכבר קיים.
 
 ### טיפים
 
