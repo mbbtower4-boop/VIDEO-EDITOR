@@ -154,7 +154,7 @@ check('buildExportFilter video-only', ops.buildExportFilter([{ start: 0, end: 1 
 check('buildExportFilter refuses empty', throws(() => ops.buildExportFilter([])));
 
 const exp = ops.buildExportArgs('in.mp4', 'out.mp4', { filterScript: 'f.txt', useNvenc: true });
-check('buildExportArgs nvenc', exp.includes('h264_nvenc') && exp.includes('-filter_complex_script'));
+check('buildExportArgs nvenc', exp.includes('h264_nvenc') && exp.includes('-/filter_complex'));
 const expSw = ops.buildExportArgs('in.mp4', 'out.mp4', { filterScript: 'f.txt', useNvenc: false });
 check('buildExportArgs libx264 fallback', expSw.includes('libx264') && !expSw.includes('h264_nvenc'));
 

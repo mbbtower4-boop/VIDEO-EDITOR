@@ -217,11 +217,13 @@ function testWhisper(whisperExe, model, wav, timeoutMs) {
     log('  no GPU build in this release; CPU only');
   }
 
-  // whisper-cli.exe in modern releases; main.exe in old ones
-  const cliRe = /^(whisper-cli|main)\.exe$/i;
-  const cpuExe = findFile(cpuDir, cliRe);
+  // whisper-cli.exe in modern releases; main.exe in old ones. Modern zips ALSO
+  // ship a main.exe that is only a deprecation stub (exits with an error), so
+  // whisper-cli.exe must be preferred, never matched alongside.
+  const findCli = (dir) => findFile(dir, /^whisper-cli\.exe$/i) || findFile(dir, /^main\.exe$/i);
+  const cpuExe = findCli(cpuDir);
   if (!cpuExe) throw new Error('whisper CLI exe not found in CPU zip');
-  const gpuExe = gpuDir ? findFile(gpuDir, cliRe) : null;
+  const gpuExe = gpuDir ? findCli(gpuDir) : null;
 
   // 3. model(s)
   log('[3/4] speech model');

@@ -248,8 +248,10 @@
 
   function buildExportArgs(input, output, opts) {
     const o = opts || {};
+    // "-/filter_complex file" reads the filtergraph from a file (ffmpeg ≥ 6.1;
+    // the old -filter_complex_script was removed in ffmpeg 8).
     const args = ['-y', '-hide_banner', '-nostats', '-progress', 'pipe:1', '-i', input,
-      '-filter_complex_script', o.filterScript, '-map', '[v]'];
+      '-/filter_complex', o.filterScript, '-map', '[v]'];
     if (o.hasAudio !== false) args.push('-map', '[a]');
     if (o.useNvenc) args.push('-c:v', 'h264_nvenc', '-preset', 'p5', '-cq', '21');
     else args.push('-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20');

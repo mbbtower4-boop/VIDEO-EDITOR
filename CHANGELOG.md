@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1 — 2026-07-14
+
+- Setup: prefer `whisper-cli.exe` over `main.exe` when scanning the whisper.cpp
+  zip — modern releases ship `main.exe` only as a deprecation stub that exits
+  with an error, which made the smoke test fail on both GPU and CPU builds.
+- Export: use `-/filter_complex <file>` instead of `-filter_complex_script`,
+  which was removed in ffmpeg 8 (the BtbN "latest" builds).
+- Verified end-to-end on real hardware: RTX 5090 runs the CUDA whisper build
+  (v1.9.1) and NVENC export at ~11× realtime.
+
 ## 1.0.0 — 2026-07-14
 
 Initial release.
