@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2 — 2026-07-14
+
+- The running version is now shown in the window title bar (in addition to the
+  toolbar), so it's always clear which build is running.
+- The post-export message now spells out the subtitle steps (Transcribe →
+  Translate → Burn-in / Embed tracks).
+
 ## 1.0.1 — 2026-07-14
 
 - Setup: prefer `whisper-cli.exe` over `main.exe` when scanning the whisper.cpp

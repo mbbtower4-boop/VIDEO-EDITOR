@@ -21,7 +21,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 680,
     backgroundColor: '#15181d',
-    title: 'VIDEO EDITOR',
+    title: 'VIDEO EDITOR v' + app.getVersion(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

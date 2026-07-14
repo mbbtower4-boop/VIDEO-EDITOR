@@ -246,7 +246,7 @@ els.btnExport.onclick = async () => {
   state.subsTarget = res.outPath;
   state.subsTargetDuration = ops.totalDuration(keeps);
   toast('Exported ' + res.outPath + (res.nvencFellBack ? ' (GPU encoder failed — used CPU)' : '') +
-    ' — subtitles will be generated from the trimmed file.');
+    ' — for subtitles: Transcribe → pick a language tab → Translate → Burn-in (text on the picture) or Embed tracks.');
 };
 
 // ---- video transport --------------------------------------------------------------------
@@ -714,7 +714,9 @@ window.addEventListener('keydown', (e) => {
 // ---- init --------------------------------------------------------------------------------------
 
 (async () => {
-  els.version.textContent = 'v' + (await window.api.getVersion());
+  const version = await window.api.getVersion();
+  els.version.textContent = 'v' + version;
+  document.title = 'VIDEO EDITOR v' + version; // title bar always shows the running version
   state.settings = await window.api.getSettings();
   fillParams(state.settings);
   const manifest = await window.api.checkTools();
