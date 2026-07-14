@@ -9,6 +9,15 @@ uploaded anywhere.
 
 ---
 
+## Easiest way: the portable version (no installation at all)
+
+If someone gave you a **VideoEditor ZIP file** (~10 GB): unzip it anywhere
+(not inside OneDrive), open the folder and double-click **`VideoEditor.exe`**.
+That's everything — no Node.js, no commands, no downloads. Skip to
+section 3 ("How to use").
+
+The steps below are only for installing from the source code on GitHub.
+
 ## 1. What you need
 
 - A Windows 10/11 PC. An NVIDIA graphics card makes it much faster, but it is
@@ -129,6 +138,15 @@ That's it. From now on, just double-click `VideoEditor.vbs`.
 כלי שמסיר "זמן מת" (שקט / תמונה קפואה) מסרטונים, יוצר כתוביות מתורגמות,
 ומפיק קובץ Word עם רשימת משימות מתוך מה שנאמר בסרטון. **הכול רץ על המחשב
 שלך** — הסרטונים לא נשלחים לשום מקום.
+
+## הדרך הקלה ביותר: הגרסה הניידת (בלי שום התקנה)
+
+אם קיבלתם **קובץ ZIP של VideoEditor** (~10 ג'יגה): מחלצים לכל מקום (לא בתוך
+OneDrive), פותחים את התיקייה ולוחצים פעמיים על **`VideoEditor.exe`**.
+זה הכול — בלי Node.js, בלי פקודות, בלי הורדות. אפשר לדלג ישר לסעיף 3
+("איך משתמשים").
+
+השלבים הבאים נחוצים רק למי שמתקין מקוד המקור ב-GitHub.
 
 ## 1. מה צריך
 

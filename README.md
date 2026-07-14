@@ -40,6 +40,14 @@ smallest video in `samples/` and reports each stage.
 Double-click `VideoEditor.vbs`, or `npm start`. Do **not** run as
 administrator — it breaks Explorer drag-and-drop and hides network drives.
 
+## Share with others (portable package)
+
+`npm run pack` builds `dist-portable/VideoEditor-<version>/` — a zero-install
+folder (~10.5 GB with all models): the recipient unzips and double-clicks
+`VideoEditor.exe`. No Node, no npm, no setup. Works with or without an NVIDIA
+GPU (CPU fallback is bundled). Flags: `--zip` also produces the .zip,
+`--no-llm` / `--no-full-model` shrink it by ~5 / ~3 GB.
+
 ## Workflow
 
 1. **Open** a video → it is analyzed automatically (waveform + silence +

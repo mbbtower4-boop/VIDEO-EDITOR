@@ -1,6 +1,7 @@
 node_modules/
 tools/
 samples/
+dist-portable/
 *.mp4
 *.srt
 *.log

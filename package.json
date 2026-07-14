@@ -1,12 +1,13 @@
 {
   "name": "video-editor",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "description": "A local, offline desktop video editor: auto-cut dead time (silence / frozen picture), transcribe speech on-device, and produce translated subtitles.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test": "node test/ops.test.js",
-    "setup": "node scripts/setup.js"
+    "setup": "node scripts/setup.js",
+    "pack": "node scripts/pack.js"
   },
   "license": "MIT",
   "devDependencies": {

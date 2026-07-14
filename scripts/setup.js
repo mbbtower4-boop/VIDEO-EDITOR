@@ -368,6 +368,7 @@ function testWhisper(whisperExe, model, wav, timeoutMs) {
       if (llamaExe) {
         manifest.llamaExe = llamaExe;
         manifest.llamaBackend = llamaBackend;
+        manifest.llamaCpuExe = lcpuExe || null;
         manifest.llamaRelease = lrel.tag_name;
         manifest.models.llm = llmModel;
       }

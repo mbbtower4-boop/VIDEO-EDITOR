@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0 — 2026-07-14
+
+- New: **portable package** — `npm run pack` builds a zero-install folder
+  (`dist-portable/VideoEditor-<version>`): recipients just unzip and
+  double-click `VideoEditor.exe`. No Node, no npm, no setup, no terminal.
+  Flags: `--zip` (also produce the .zip), `--no-llm` / `--no-full-model`
+  (smaller package). ~10.5 GB with everything included.
+- The bundled manifest uses relative paths, and whisper/llama automatically
+  retry with their bundled CPU builds at runtime — so one package works on
+  PCs with or without an NVIDIA GPU.
+
 ## 1.2.5 — 2026-07-14
 
 - Setup: downloads are verified against the server-declared size — a dropped
