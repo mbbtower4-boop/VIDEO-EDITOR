@@ -22,10 +22,14 @@ uploaded anywhere.
    version, run the installer, click Next-Next-Finish (defaults are fine).
 2. **Download the tool**: go to
    <https://github.com/mbbtower4-boop/VIDEO-EDITOR>, click the green
-   **Code** button → **Download ZIP**. Unzip it anywhere (e.g. `C:\VIDEO-EDITOR`).
+   **Code** button → **Download ZIP**. Unzip it to a folder like
+   `C:\VIDEO-EDITOR`.
+   ⚠️ **Not inside OneDrive** (not Desktop/Documents if they are synced) —
+   the installation downloads ~7 GB and OneDrive will try to upload all of it.
 3. **Open a terminal in that folder**: open the unzipped folder in Explorer,
    click the address bar, type `cmd` and press Enter.
-4. Run these two commands (wait for each to finish):
+4. Run these two commands, **in lowercase exactly as written** (wait for each
+   to finish; `NPM INSTALL` in capitals will NOT work):
 
    ```
    npm install
@@ -110,11 +114,14 @@ That's it. From now on, just double-click `VideoEditor.vbs`.
 1. **התקנת Node.js**: נכנסים ל-<https://nodejs.org>, מורידים את גרסת
    ה-**LTS**, מריצים את ההתקנה ולוחצים הלאה-הלאה-סיום.
 2. **הורדת הכלי**: נכנסים ל-<https://github.com/mbbtower4-boop/VIDEO-EDITOR>,
-   לוחצים על הכפתור הירוק **Code** ← **Download ZIP**, ומחלצים לתיקייה כלשהי
-   (למשל `C:\VIDEO-EDITOR`).
+   לוחצים על הכפתור הירוק **Code** ← **Download ZIP**, ומחלצים לתיקייה כמו
+   `C:\VIDEO-EDITOR`.
+   ⚠️ **לא בתוך OneDrive** (לא בשולחן העבודה/מסמכים אם הם מסונכרנים) —
+   ההתקנה מורידה כ-7 ג'יגה ו-OneDrive ינסה להעלות את הכול לענן.
 3. **פתיחת טרמינל בתיקייה**: פותחים את התיקייה בסייר הקבצים, לוחצים על שורת
    הכתובת, מקלידים `cmd` ולוחצים Enter.
-4. מריצים את שתי הפקודות (מחכים שכל אחת תסתיים):
+4. מריצים את שתי הפקודות, **באותיות קטנות בדיוק כמו שכתוב** (מחכים שכל
+   אחת תסתיים; `NPM INSTALL` באותיות גדולות לא יעבוד):
 
    ```
    npm install
