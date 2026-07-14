@@ -41,10 +41,11 @@ administrator — it breaks Explorer drag-and-drop and hides network drives.
 1. **Open** a video → it is analyzed automatically (waveform + silence +
    frozen-picture detection).
 2. Review the timeline: amber = silence, blue = frozen picture, red = proposed
-   cuts. Click a cut to keep/remove it, drag its edges to adjust, right-click
-   to add or delete cuts. "Preview with cuts" plays the video skipping
-   everything that will be removed. Detection sliders on the right re-derive
-   cuts instantly; threshold changes need "Re-analyze".
+   cuts. Click a cut to keep/remove it, drag its edges to adjust, **drag across
+   an empty part of the cuts lane to manually mark any range for removal**,
+   right-click for quick add/delete. "Preview with cuts" plays the video
+   skipping everything that will be removed. Detection sliders on the right
+   re-derive cuts instantly; threshold changes need "Re-analyze".
 3. **Export** writes the trimmed MP4 (GPU-encoded with NVENC when available —
    a 25-minute video takes ~1–3 minutes; falls back to libx264 automatically).
 4. **Transcribe** runs whisper.cpp locally on the trimmed file (audio never

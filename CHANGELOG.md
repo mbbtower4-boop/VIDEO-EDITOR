@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3 — 2026-07-14
+
+- Manual cuts: drag across an empty part of the cuts lane to mark any exact
+  range for removal (live red preview while dragging). Right-click quick
+  add/delete and edge-dragging still work as before.
+
 ## 1.0.2 — 2026-07-14
 
 - The running version is now shown in the window title bar (in addition to the

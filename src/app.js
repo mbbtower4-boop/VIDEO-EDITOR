@@ -355,6 +355,18 @@ function draw() {
     ctx.strokeRect(x0 + 0.5, LANES.cuts[0] + 0.5, Math.max(1, x1 - x0) - 1, LANES.cuts[1] - LANES.cuts[0] - 1);
   }
 
+  // live preview of a manual cut being dragged out
+  if (dragCtx && dragCtx.type === 'create') {
+    const a = Math.min(dragCtx.t0, dragCtx.t1), b = Math.max(dragCtx.t0, dragCtx.t1);
+    const x0 = timeToX(a, w), x1 = timeToX(b, w);
+    ctx.fillStyle = 'rgba(224,85,85,0.45)';
+    ctx.fillRect(x0, LANES.cuts[0], Math.max(1, x1 - x0), LANES.cuts[1] - LANES.cuts[0]);
+    ctx.strokeStyle = '#ff9d9d';
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(x0 + 0.5, LANES.cuts[0] + 0.5, Math.max(1, x1 - x0) - 1, LANES.cuts[1] - LANES.cuts[0] - 1);
+    ctx.setLineDash([]);
+  }
+
   // lane captions
   ctx.fillStyle = '#8a94a1';
   ctx.font = '10px Segoe UI';
@@ -400,6 +412,10 @@ els.tlCanvas.addEventListener('mousedown', (e) => {
     dragCtx = { type: 'edge', cut: hit.cut, edge: hit.edge, moved: false };
   } else if (hit) {
     dragCtx = { type: 'maybeToggle', cut: hit.cut, x0: x };
+  } else if (y >= LANES.cuts[0] && y <= LANES.cuts[1]) {
+    // drag across the empty cuts lane to mark a manual cut of that exact range
+    const t = xToTime(x, w);
+    dragCtx = { type: 'create', t0: t, t1: t };
   } else {
     dragCtx = { type: 'scrub' };
     els.video.currentTime = Math.max(0, Math.min(state.probe.duration, xToTime(x, w)));
@@ -420,6 +436,9 @@ window.addEventListener('mousemove', (e) => {
     else cut.end = Math.max(snapped, cut.start + 0.05);
     refreshStats();
     draw();
+  } else if (dragCtx.type === 'create') {
+    dragCtx.t1 = t;
+    draw();
   } else if (dragCtx.type === 'scrub') {
     els.video.currentTime = t;
     updateReadout();
@@ -434,9 +453,17 @@ window.addEventListener('mouseup', () => {
     dragCtx.cut.enabled = !dragCtx.cut.enabled;
     refreshStats();
     updateReadout();
-    draw();
+  } else if (dragCtx && dragCtx.type === 'create') {
+    const a = Math.min(dragCtx.t0, dragCtx.t1), b = Math.max(dragCtx.t0, dragCtx.t1);
+    if (b - a >= 0.2) {
+      state.cuts.push({ id: 'c' + (++state.cutSeq), start: a, end: b, enabled: true, source: 'manual' });
+      state.cuts = ops.sortSegments(state.cuts);
+      refreshStats();
+      updateReadout();
+    }
   }
   dragCtx = null;
+  draw();
 });
 
 els.tlCanvas.addEventListener('contextmenu', (e) => {
