@@ -256,6 +256,16 @@ check('parseTasksResponse strips fences, drops empty titles, coerces priority',
   tr2.tasks.length === 2 && tr2.tasks[1].priority === 'normal');
 check('parseTasksResponse bare array accepted', ops.parseTasksResponse('[{"title":"x"}]').tasks.length === 1);
 check('parseTasksResponse garbage throws', throws(() => ops.parseTasksResponse('sorry, no tasks here')));
+// llama-cli echoes the prompt (with its JSON template) before the reply —
+// the parser must take the LAST valid JSON block, not the first.
+const echoed = 'banner noise\n> Reply ONLY as {"heading": "<title>", "tasks": [{"title": "<task>", ' +
+  '"priority": "high" | "normal" | "low"}]} ... return {"heading": "...", "tasks": []}.\n' +
+  'Transcript: fix the fence\n' +
+  '{"heading":"Site tasks","tasks":[{"title":"Fix the fence","details":"gate 3","priority":"high"}]}\n' +
+  '[ Prompt: 664.8 t/s ]\nExiting...';
+const trEcho = ops.parseTasksResponse(echoed);
+check('parseTasksResponse skips echoed prompt, takes final JSON',
+  trEcho.heading === 'Site tasks' && trEcho.tasks.length === 1 && trEcho.tasks[0].priority === 'high');
 
 const llargs = ops.buildLlamaArgs('D:\\m\\q.gguf', 'D:\\t\\p.txt');
 check('buildLlamaArgs prompt via file + single turn + GPU offload',

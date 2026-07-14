@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 — 2026-07-14
+
+- Fix: task extraction with the local model failed to parse — llama-cli echoes
+  the prompt (including the JSON template) into its output, and the parser was
+  grabbing that instead of the model's reply. It now takes the last valid JSON
+  block. Verified end-to-end on GPU (3 tasks from a test transcript in ~6 s).
+
 ## 1.2.0 — 2026-07-14
 
 - The tasks report no longer requires an API key: new **local AI engine**

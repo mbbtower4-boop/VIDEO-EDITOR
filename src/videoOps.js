@@ -496,24 +496,9 @@
       'Transcript:\n' + transcript;
   }
 
-  function parseTasksResponse(text) {
-    let t = String(text).trim()
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/```\s*$/, '')
-      .trim();
-    const objStart = t.indexOf('{');
-    const arrStart = t.indexOf('[');
-    let parsed;
-    try {
-      if (objStart !== -1 && (arrStart === -1 || objStart < arrStart)) {
-        parsed = JSON.parse(t.slice(objStart, t.lastIndexOf('}') + 1));
-      } else if (arrStart !== -1) {
-        parsed = { heading: '', tasks: JSON.parse(t.slice(arrStart, t.lastIndexOf(']') + 1)) };
-      }
-    } catch (e) { /* handled below */ }
-    if (!parsed || !Array.isArray(parsed.tasks)) {
-      throw new Error('Could not parse a task list from the model reply.');
-    }
+  function normalizeTasksJson(parsed) {
+    if (Array.isArray(parsed)) parsed = { heading: '', tasks: parsed };
+    if (!parsed || !Array.isArray(parsed.tasks)) return null;
     const tasks = parsed.tasks
       .filter((x) => x && typeof x.title === 'string' && x.title.trim())
       .map((x) => ({
@@ -522,6 +507,36 @@
         priority: ['high', 'normal', 'low'].includes(x.priority) ? x.priority : 'normal',
       }));
     return { heading: typeof parsed.heading === 'string' ? parsed.heading.trim() : '', tasks };
+  }
+
+  // Extract the LAST parseable {...} (or bare [...]) block in the text. The
+  // reply may be preceded by noise — llama-cli echoes the whole prompt
+  // (including the JSON template inside it) before the actual answer, so
+  // scanning from the end is the reliable direction.
+  function parseTasksResponse(text) {
+    const t = String(text).replace(/```(?:json)?/gi, '');
+    const scan = (open, close) => {
+      for (let end = t.lastIndexOf(close); end !== -1; end = t.lastIndexOf(close, end - 1)) {
+        let depth = 0;
+        for (let i = end; i >= 0; i--) {
+          if (t[i] === close) depth++;
+          else if (t[i] === open) {
+            depth--;
+            if (depth === 0) {
+              try {
+                const norm = normalizeTasksJson(JSON.parse(t.slice(i, end + 1)));
+                if (norm) return norm;
+              } catch (e) { /* not valid JSON — keep scanning */ }
+              break;
+            }
+          }
+        }
+      }
+      return null;
+    };
+    const result = scan('{', '}') || scan('[', ']');
+    if (!result) throw new Error('Could not parse a task list from the model reply.');
+    return result;
   }
 
   // llama-cli invocation for the offline tasks report. The prompt goes via a
