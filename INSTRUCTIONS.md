@@ -86,6 +86,19 @@ That's it. From now on, just double-click `VideoEditor.vbs`.
    with checkboxes, details and priorities. Runs fully offline on the local
    AI model; no API key needed.
 
+### Troubleshooting
+
+- **"Unknown command: INSTALL"** — the commands must be lowercase: `npm install`.
+- **"SETUP FAILED: whisper ... smoke test failed"** — download the latest ZIP
+  of the tool (this was improved), replace the files, and run `npm run setup`
+  again. To avoid re-downloading gigabytes, first move the `tools` folder from
+  the old folder into the new one. On PCs without an NVIDIA card the tool runs
+  on the CPU (slower); on PCs with little memory it automatically switches to
+  a smaller speech model.
+- **Antivirus warning** — some antivirus programs block the downloaded
+  `whisper-cli.exe` / `ffmpeg.exe`. Add an exclusion for the tool's folder and
+  run `npm run setup` again.
+
 ### Tips
 
 - The window title shows the version (e.g. "VIDEO EDITOR v1.2.3").
@@ -173,6 +186,17 @@ That's it. From now on, just double-click `VideoEditor.vbs`.
    **Tasks report (Word)**.
 2. מתקבל קובץ `.docx` עם צ'קליסט של כל הוראה שנאמרה בסרטון — עם תיבות
    סימון, פירוט ועדיפויות. רץ לגמרי אופליין על מודל ה-AI המקומי, בלי מפתח API.
+
+### פתרון תקלות
+
+- **"Unknown command: INSTALL"** — הפקודות חייבות אותיות קטנות: `npm install`.
+- **"SETUP FAILED: whisper ... smoke test failed"** — להוריד את ה-ZIP העדכני
+  של הכלי (זה שופר), להחליף את הקבצים, ולהריץ שוב `npm run setup`. כדי לא
+  להוריד שוב ג'יגות — קודם להעביר את תיקיית `tools` מהתיקייה הישנה לחדשה.
+  במחשב בלי כרטיס NVIDIA הכלי רץ על המעבד (לאט יותר); במחשב עם מעט זיכרון
+  הוא עובר אוטומטית למודל דיבור קטן יותר.
+- **חסימת אנטי-וירוס** — יש תוכנות שחוסמות את `whisper-cli.exe` / `ffmpeg.exe`
+  שהורדו. מוסיפים החרגה לתיקיית הכלי ומריצים שוב `npm run setup`.
 
 ### טיפים
 

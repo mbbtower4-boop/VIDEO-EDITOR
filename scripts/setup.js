@@ -32,6 +32,8 @@ const FFMPEG_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/downlo
 const WHISPER_RELEASE_API = 'https://api.github.com/repos/ggml-org/whisper.cpp/releases/latest';
 const MODEL_TURBO_URL = 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin';
 const MODEL_FULL_URL = 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin';
+// last-resort model for low-RAM machines (~466 MB, runs anywhere)
+const MODEL_SMALL_URL = 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin';
 const LLAMA_RELEASE_API = 'https://api.github.com/repos/ggml-org/llama.cpp/releases/latest';
 // Multilingual instruct model (good Hebrew/Russian), single-file GGUF, ~4.7 GB
 const LLM_MODEL_URL = 'https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf';
@@ -160,7 +162,16 @@ function testWhisper(whisperExe, model, wav, timeoutMs) {
   // unsupported GPU the CUDA build may crash or hang in PTX JIT — the timeout
   // catches both, and the caller falls back to the CPU build.
   const r = run(whisperExe, ['-m', model, '-f', wav, '-np'], timeoutMs);
-  return r.status === 0;
+  if (r.status === 0) return true;
+  // say WHY it failed, so remote debugging is possible
+  if (r.error && String(r.error.code || '').includes('TIMEDOUT')) {
+    log('    (test timed out after ' + Math.round((timeoutMs || 60000) / 1000) + 's)');
+  } else {
+    log('    (exit code ' + r.status + (r.signal ? ', signal ' + r.signal : '') + ')');
+    const tail = (r.stderr || '').trim().split(/\r?\n/).slice(-4).join('\n    ');
+    if (tail) log('    ' + tail);
+  }
+  return false;
 }
 
 // ---- main ---------------------------------------------------------------------
@@ -260,12 +271,30 @@ function testWhisper(whisperExe, model, wav, timeoutMs) {
       log('  GPU build FAILED on this machine — falling back to CPU build');
     }
   }
+  let defaultModel = turboModel;
   if (!chosenExe) {
     log('  testing CPU build...');
-    if (!testWhisper(cpuExe, turboModel, wav, 300000)) throw new Error('whisper CPU smoke test failed');
-    chosenExe = cpuExe; backend = 'cpu';
-    log('  CPU build: OK');
+    if (testWhisper(cpuExe, turboModel, wav, 300000)) {
+      chosenExe = cpuExe; backend = 'cpu';
+      log('  CPU build: OK');
+    } else {
+      // Most common cause: not enough free RAM for the 1.6 GB turbo model.
+      // Last resort: the small model (~466 MB) runs on any machine.
+      log('  CPU build failed with the large model — trying the small model (works on low-RAM PCs)...');
+      const smallModel = path.join(modelsDir, 'ggml-small.bin');
+      await download(MODEL_SMALL_URL, smallModel, 'ggml-small');
+      if (!testWhisper(cpuExe, smallModel, wav, 300000)) {
+        throw new Error('whisper failed on this machine with both models. ' +
+          'Common causes: less than 4 GB free RAM, or antivirus blocking whisper-cli.exe ' +
+          '(add an exclusion for the tools folder and re-run: npm run setup).');
+      }
+      chosenExe = cpuExe; backend = 'cpu';
+      defaultModel = smallModel;
+      manifest.models.small = smallModel;
+      log('  CPU build with small model: OK (transcription quality will be reduced)');
+    }
   }
+  manifest.models.default = defaultModel;
   manifest.whisperExe = chosenExe;
   manifest.whisperBackend = backend;
   manifest.whisperCpuExe = cpuExe;

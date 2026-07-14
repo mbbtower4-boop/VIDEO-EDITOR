@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.4 — 2026-07-14
+
+- Setup on machines without a working GPU: the whisper smoke test now prints
+  the actual error (exit code / stderr / timeout) instead of failing silently,
+  and when the CPU build can't run the 1.6 GB turbo model (low-RAM PCs) it
+  automatically downloads the small model (~466 MB) and uses it instead.
+  Troubleshooting section added to INSTRUCTIONS.md.
+
 ## 1.2.3 — 2026-07-14
 
 - Tasks report granularity: the prompt now requires every distinct
